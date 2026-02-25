@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "google-workspace": {
+      "command": "uvx",
+      "args": [
+        "--env-file",
+        ".env",
+        "workspace-mcp",
+        "--tool-tier",
+        "complete"
+      ]
+    }
+  }
+}
