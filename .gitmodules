@@ -6,3 +6,7 @@
 	path = squads-private
 	url = https://github.com/murilloimparavel/mvp-squads.git
 	branch = main
+[submodule "squads-mvp"]
+	path = squads-mvp
+	url = https://github.com/murilloimparavel/mvp-squads.git
+	branch = main
