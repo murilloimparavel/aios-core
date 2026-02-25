@@ -1,0 +1,4 @@
+[submodule "squads/squad-creator-pro-private"]
+	path = squads/squad-creator-pro-private
+	url = https://github.com/murilloimparavel/squads-mvp.git
+	branch = main
