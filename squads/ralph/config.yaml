@@ -1,9 +1,0 @@
-name: ralph
-version: 2.4.0
-short-title: Ralph
-description: >-
-  Autonomous development loop with compound learning.
-  Enables autonomous agent delegation for complex features.
-author: "@oalanicolas"
-slashPrefix: ralph
-entry_agent: ralph
