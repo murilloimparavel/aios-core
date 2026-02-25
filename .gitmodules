@@ -1,15 +1,4 @@
-[submodule "squads/squad-creator-pro-private"]
-	path = squads/squad-creator-pro-private
-	url = https://github.com/murilloimparavel/squads-mvp.git
-	branch = main
-[submodule "squads-private"]
-	path = squads-private
-	url = https://github.com/murilloimparavel/mvp-squads.git
-	branch = main
-[submodule "squads-mvp"]
-	path = squads-mvp
-	url = https://github.com/murilloimparavel/mvp-squads.git
-	branch = main
 [submodule "squads"]
 	path = squads
 	url = https://github.com/murilloimparavel/mvp-squads.git
+	branch = main
