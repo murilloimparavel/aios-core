@@ -130,6 +130,32 @@ commands:
     description: 'Add new components (agents, tasks, templates, etc.) to existing squad'
     task: squad-creator-extend.md
 
+  # Advanced Features (Squad Creator Pro v2.9.0 Integration)
+  - name: clone-mind
+    visibility: [full, quick, key]
+    description: 'Clone expert mind with Voice DNA + Thinking DNA (8 layers, 85-97% fidelity)'
+    task: squads/squad-creator-pro/tasks/clone-mind.md
+    backend_agent: oalanicolas
+    requires: squad-creator-pro
+  - name: extract-sop
+    visibility: [full, quick, key]
+    description: 'Extract SOP from transcript (11-part SC-PE-001 standard, automation analysis)'
+    task: squads/squad-creator-pro/tasks/extract-sop.md
+    backend_agent: sop-extractor
+    requires: squad-creator-pro
+  - name: discover-tools
+    visibility: [full, quick, key]
+    description: 'Deep tool discovery (5 sub-agents, tier-relative ranking, security gates)'
+    task: squads/squad-creator-pro/tasks/discover-tools.md
+    backend_agent: squad-chief
+    requires: squad-creator-pro
+  - name: quality-dashboard
+    visibility: [full, quick, key]
+    description: 'Squad quality metrics (fidelity, coverage, quality gates, agent depth)'
+    task: squads/squad-creator-pro/tasks/quality-dashboard.md
+    backend_agent: squad-chief
+    requires: squad-creator-pro
+
   # Distribution (Sprint 8 - Placeholders)
   - name: download-squad
     visibility: [full]
@@ -167,6 +193,11 @@ dependencies:
     - squad-creator-download.md
     - squad-creator-publish.md
     - squad-creator-sync-synkra.md
+    # Advanced Features (Squad Creator Pro v2.9.0)
+    - squads/squad-creator-pro/tasks/clone-mind.md
+    - squads/squad-creator-pro/tasks/extract-sop.md
+    - squads/squad-creator-pro/tasks/discover-tools.md
+    - squads/squad-creator-pro/tasks/quality-dashboard.md
   scripts:
     - squad/squad-loader.js
     - squad/squad-validator.js
@@ -196,6 +227,32 @@ squad_distribution:
       api: 'api.synkra.dev/squads'
       description: 'Premium squads via Synkra API'
       command: '*sync-squad-synkra'
+
+advanced_features:
+  squad_creator_pro:
+    enabled: true
+    path: 'squads/squad-creator-pro'
+    version: '2.9.0'
+    description: 'Advanced squad creation with mind cloning, deep tool discovery, and SOP extraction'
+    backend_agents:
+      - name: squad-chief
+        role: Orchestrator
+        capabilities: [discovery, tool-analysis, quality-gates]
+      - name: oalanicolas
+        role: Mind Cloning Specialist
+        capabilities: [voice-dna, thinking-dna, fidelity-validation]
+      - name: sop-extractor
+        role: SOP Extraction Specialist
+        capabilities: [transcription-parsing, sc-pe-001, automation-analysis]
+    commands:
+      - clone-mind           # 8-layer DNA extraction, 85-97% fidelity
+      - extract-sop          # SC-PE-001 standard, 11-part extraction
+      - discover-tools       # 5 sub-agents, tier-relative ranking
+      - quality-dashboard    # Fidelity, coverage, gate analysis
+    cost_optimization:
+      worker_scripts: true
+      estimated_savings_per_year: '$540'
+      tokens_saved_per_month: '~15M'
 
 autoClaude:
   version: '3.0'
@@ -234,6 +291,18 @@ autoClaude:
 - `*migrate-squad {path}` - Migrate legacy squad to AIOS 2.1 format
 - `*migrate-squad {path} --dry-run` - Preview migration changes
 - `*migrate-squad {path} --verbose` - Migrate with detailed output
+
+**Advanced Features (Squad Creator Pro v2.9.0):**
+
+- `*clone-mind {expert-name}` - Clone expert with Voice DNA + Thinking DNA
+- `*clone-mind {expert-name} --mode yolo` - Clone with auto web research
+- `*clone-mind {expert-name} --mode quality` - Clone with user materials (85-97% fidelity)
+- `*extract-sop {transcript-path}` - Extract SOP (SC-PE-001, 11 parts)
+- `*extract-sop {transcript-path} --analyze-automation` - Include automation tipping point
+- `*discover-tools {domain}` - Deep tool discovery (5 sub-agents)
+- `*discover-tools {domain} --format matrix` - Show decision matrix (DO NOW/NEXT/LATER)
+- `*quality-dashboard {squad-name}` - Show squad quality metrics
+- `*quality-dashboard {squad-name} --verbose` - Detailed fidelity and coverage
 
 **Distribution (Sprint 8):**
 
@@ -333,10 +402,95 @@ Type `*help` to see all commands, or `*guide` for detailed usage.
 - ❌ Not following task-first architecture
 - ❌ Circular dependencies between squads
 
+### Advanced Features: Squad Creator Pro Integration
+
+This agent now includes advanced capabilities from **Squad Creator Pro v2.9.0**, a sophisticated system for creating high-fidelity squads from real experts.
+
+#### 🧠 Mind Cloning (`*clone-mind`)
+
+Extract the complete DNA of an expert:
+- **Voice DNA**: Communication patterns, vocabulary, tone
+- **Thinking DNA**: Frameworks, heuristics, decision patterns
+- **Fidelity**: 60-75% (YOLO mode), 85-97% (QUALITY mode with materials)
+
+```bash
+*clone-mind alex-hormozi --mode quality --materials ./alex-hormozi-materials/
+```
+
+#### 📋 SOP Extraction (`*extract-sop`)
+
+Transform transcriptions into structured Standard Operating Procedures (SC-PE-001):
+- 11-part SOP structure
+- Automation tipping point analysis (PV_PM_001)
+- Squad blueprint generation
+- Validation checklist (SC-CK-001)
+
+```bash
+*extract-sop ./transcripts/sales-process.md --analyze-automation
+```
+
+#### 🔍 Deep Tool Discovery (`*discover-tools`)
+
+Research tools using 5 parallel sub-agents with tier-relative ranking:
+- **MCP Agent** - Model Context Protocol servers
+- **API Agent** - REST APIs & integrations
+- **CLI Agent** - Command-line tools
+- **Library Agent** - Code libraries/SDKs
+- **GitHub Agent** - Open source projects
+
+Outputs decision matrix: DO NOW > DO NEXT > DO LATER > DON'T DO
+
+```bash
+*discover-tools "AI-powered copywriting" --format matrix
+```
+
+#### 📊 Quality Dashboard (`*quality-dashboard`)
+
+Monitor squad quality metrics:
+- **Fidelity Score**: % similarity to original expert
+- **Coverage**: Agent count, task count, framework coverage
+- **Quality Gates**: 9 validation phases
+- **Cost Optimization**: Token savings via worker scripts
+
+```bash
+*quality-dashboard copy-squad --verbose
+```
+
+### Cost Optimization
+
+Squad Creator Pro uses an **Executor Decision Tree**:
+- **Worker Scripts** (Python): Deterministic operations ($0 cost)
+- **Agent Tasks** (LLM): Semantic analysis (~$0.05 per task)
+- **Hybrid**: Optimized balance (~$0.02 per task)
+
+**Annual Savings**: ~$540 (~15M tokens/month avoided)
+
+### Real Production Squads
+
+Squad Creator Pro has produced:
+- **31 squads** across domains (copy, sales, marketing, branding)
+- **206 agents** with real expert DNA
+- **60+ minds** cloned from elite practitioners
+- **100,000+ lines** of generated code
+
+Gold standard: `copy` squad with 25 copywriters (Alex Hormozi, Ry Schwartz, Gary Halbert, Dan Kennedy, etc.)
+
+### Typical Advanced Workflow
+
+```
+1. Design → *design-squad --docs ./prd.md
+2. Clone Expert → *clone-mind gary-halbert --mode quality
+3. Extract SOPs → *extract-sop ./transcripts/
+4. Discover Tools → *discover-tools "copywriting tech stack"
+5. Create Squad → *create-squad copy-squad
+6. Monitor Quality → *quality-dashboard copy-squad
+```
+
 ### Related Agents
 
 - **@dev (Dex)** - Implements squad code
 - **@qa (Quinn)** - Reviews squad quality
 - **@devops (Gage)** - Handles deployment
+- **@squad-creator-pro** - Backend system for advanced features
 
 ---
