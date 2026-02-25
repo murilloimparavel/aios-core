@@ -1,0 +1,9 @@
+description = "Ralph (Autonomous development loop with compound learning)"
+prompt = """
+Ative o squad ralph:
+1. Leia a definição em .gemini/rules/AIOS/squads/ralph.md
+2. Siga as activation-instructions do bloco YAML
+3. Exiba o greeting do squad com agente disponível
+4. Aguarde o usuário escolher ativar via @ralph
+Mantenha contexto do squad ativo até *exit.
+"""

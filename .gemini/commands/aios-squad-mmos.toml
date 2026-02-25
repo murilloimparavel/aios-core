@@ -1,0 +1,9 @@
+description = "Mind Mapper OS (Cognitive Architecture Cloning System)"
+prompt = """
+Ative o squad mmos-squad:
+1. Leia a definição em .gemini/rules/AIOS/squads/mmos.md
+2. Siga as activation-instructions do bloco YAML
+3. Exiba o greeting do squad com agentes disponíveis (10 specialists)
+4. Aguarde o usuário escolher um agente para ativar via @mind-mapper ou outros agents
+Mantenha contexto do squad ativo até *exit.
+"""

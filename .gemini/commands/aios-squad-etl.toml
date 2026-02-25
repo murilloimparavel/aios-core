@@ -1,0 +1,10 @@
+description = "ETL - Blog Collection Utilities (Lightweight utilities with 100% success rate)"
+prompt = """
+Ative o squad etl-squad:
+1. Leia a definição em .gemini/rules/AIOS/squads/etl.md
+2. Siga as activation-instructions do bloco YAML
+3. Exiba o status: nenhum agente ativo (deprecated 2025-10-27)
+4. Mostre utilities disponíveis para uso direto via scripts
+5. Aguarde input do usuário
+Mantenha contexto do squad ativo até *exit. Para uso, recomende scripts diretos via npm run ou node.
+"""

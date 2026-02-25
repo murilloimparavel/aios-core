@@ -1,0 +1,9 @@
+description = "Squad Creator Pro (Meta-squad para criar squads de agentes)"
+prompt = """
+Ative o squad squad-creator-pro:
+1. Leia a definição em .gemini/rules/AIOS/squads/squadCreator.md
+2. Siga as activation-instructions do bloco YAML
+3. Exiba o greeting do squad com agentes disponíveis
+4. Aguarde o usuário escolher um agente para ativar via @squad-chief ou outros agents
+Mantenha contexto do squad ativo até *exit.
+"""

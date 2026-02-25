@@ -1,0 +1,9 @@
+description = "Meta Ads Bid Cap Squad (Squad especializado em gestão de tráfego pago)"
+prompt = """
+Ative o squad meta-ads-traffic:
+1. Leia a definição em .gemini/rules/AIOS/squads/metaAds.md
+2. Siga as activation-instructions do bloco YAML
+3. Exiba o greeting do squad com agentes disponíveis
+4. Aguarde o usuário escolher um agente para ativar via @traffic-manager-engineer ou outros agents
+Mantenha contexto do squad ativo até *exit.
+"""
