@@ -1,0 +1,506 @@
+# WF-03: Campanhas de Lead Gen com Bid Cap (Instant Form)
+# Duration: 2-3h lançamento + análise contínua
+# Best for: Captura de leads via Formulário Instantâneo com controle de CPL
+# Key Agents: CreativeStrategist → TrafficManager → LeadQualifier
+
+workflow:
+  id: wf-lead-gen-campaign
+  name: "Campanhas de Lead Gen com Bid Cap"
+  version: "1.0.0"
+  duration: "2-3h (lançamento) + análise após 20 leads"
+  description: |
+    Workflow para campanhas de geração de leads via Formulário Instantâneo
+    no Meta Ads. Usa Bid Cap baseado no VALOR REAL do lead para o negócio,
+    não no CPL histórico.
+
+    Diferenças chave vs campanha de vendas:
+    - Objetivo: OUTCOME_LEADS (não CONVERSIONS)
+    - Tracking: Nativo no Meta via leadgen_id (sem pixel/CAPI)
+    - Bid Cap: Baseado em ticket × taxa_conversão × margem
+    - Qualidade: LQS (Lead Quality Score) é a métrica central
+    - Otimização: Formulário primeiro, bid depois
+
+    Este workflow produz:
+    - Campanha Lead Gen ativa com Bid Cap calculado
+    - Formulário Instantâneo validado e integrado
+    - Sistema de qualificação de leads operando
+    - Pipeline de criativos alimentando a campanha
+
+  best_for:
+    - "Produtos/serviços com processo de vendas humano (consultivo)"
+    - "Tickets acima de R$200 com conversão lead→venda > 5%"
+    - "Negócios que precisam de qualificação antes de apresentar oferta"
+    - "Primeiras campanhas sem histórico de pixel"
+    - "Transição de landing page para Instant Form"
+
+  key_difference_from_sales: |
+    Campanha de vendas: CONVERSIONS → rastreia compra no site → precisa pixel
+    Campanha de lead: OUTCOME_LEADS → rastreia preenchimento de form → sem pixel
+
+    Quando usar lead gen:
+    ✓ Produto com ciclo de venda longo
+    ✓ Alto ticket que precisa de consulta
+    ✓ Sem site ou landing page otimizados
+    ✓ Quer testar demanda sem infraestrutura
+
+    Quando usar vendas (não lead gen):
+    ✗ E-commerce com checkout próprio
+    ✗ Produto de baixo ticket (< R$100) compra impulsiva
+    ✗ Já tem pixel com 50+ conversões/mês
+
+  bid_cap_formula: |
+    valor_lead = ticket_medio × taxa_conversao_lead_venda × margem
+    bid_cap = valor_lead × 1.25
+    budget_cbo = bid_cap × 10
+
+    Exemplo (consultoria R$2.000, 15% conversão, 60% margem):
+    → valor_lead = R$2.000 × 0.15 × 0.60 = R$180
+    → bid_cap = R$225
+    → budget_cbo = R$2.250/dia
+
+  agents:
+    primary: "meta-ads-traffic:traffic-manager-engineer + meta-ads-traffic:creative-strategist-designer"
+    secondary:
+      - "meta-ads-traffic:lead-qualifier-analyzer (qualificação)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 1: ESTRATÉGIA CRIATIVA PARA LEAD (CreativeStrategist)
+# ═══════════════════════════════════════════════════════════════════════════════
+phases:
+  - id: PHASE-1
+    name: "Estratégia Criativa para Lead Gen"
+    days: "0.5"
+    tier: 0
+    description: |
+      CreativeStrategist adapta a estratégia criativa para campanhas de lead.
+      Criativos para lead têm objetivo diferente: NÃO precisam vender,
+      precisam QUALIFICAR. O criativo é um filtro de intenção.
+
+      Princípio: Quem preenche o formulário após ver o criativo já sabe
+      que tem um problema e está interessado em solução. O criativo certo
+      atrai o lead certo, mesmo que reduza o volume.
+
+    tasks:
+      - task_file: tasks/creative-cycle.md
+        agent: meta-ads-traffic:creative-strategist-designer
+        required: true
+        description: "Gerar 3-5 ângulos focados em QUALIFICAÇÃO, não em conversão direta"
+        output: "creative_brief_leadgen.md — ângulos, hooks e copies para lead"
+
+    lead_creative_strategy:
+      objective: "FILTRAR leads qualificados, não maximizar volume"
+      angles_for_lead:
+        - "Dor específica do avatar (qualifica por problema)"
+        - "Transformação prometida (qualifica por desejo)"
+        - "Prova social + resultado (qualifica por crença)"
+      hooks_for_lead:
+        - "Você [problema específico]? → chama quem tem o problema"
+        - "Como [resultado] em [tempo] → chama quem quer o resultado"
+        - "X pessoas de [perfil] já [resultado] → prova social"
+      copy_for_form:
+        - "CTA direto ao formulário: 'Preencha o formulário e [próximo passo]'"
+        - "Reduzir expectativa de esforço: '30 segundos para'"
+        - "Definir o que acontece após: 'Nossa equipe entrará em contato'"
+      formats:
+        - "Vídeo curto 15-30s (explica o problema + CTA)"
+        - "Estático com bullet points da dor"
+        - "Carrossel: problema → agravamento → solução (preencha)"
+
+    checkpoint:
+      criteria:
+        - "Mínimo 3 ângulos distintos focados em qualificação"
+        - "Copy do criativo alinhado com o que o formulário pede"
+        - "CTA congruente com o tipo de formulário (Alta Intenção vs Mais Volume)"
+        - "Formatos criados para mobile (onde 90% dos leads são captados)"
+      human_review: false
+      message: |
+        ✅ PHASE-1 COMPLETE: Creative brief para lead gen gerado.
+        Ângulos: [N] | Hooks: [N] | Criativos para prod: [N]
+        Próximo: TrafficManager configura campanha e formulário.
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 2: CONFIGURAÇÃO DA CAMPANHA E FORMULÁRIO (TrafficManager)
+# ═══════════════════════════════════════════════════════════════════════════════
+  - id: PHASE-2
+    name: "Configuração da Campanha e Formulário"
+    days: "0.5"
+    tier: 0
+    description: |
+      TrafficManager calcula o valor do lead, define Bid Cap, cria a
+      campanha OUTCOME_LEADS e vincula o Formulário Instantâneo.
+      Campanha permanece PAUSED até aprovação humana.
+
+    tasks:
+      - task_file: tasks/lead-gen-launch.md
+        agent: meta-ads-traffic:traffic-manager-engineer
+        required: true
+        description: "Calcular valor_lead, criar campanha CBO, configurar Instant Form"
+        output: "campaign_ids.json + lead_gen_config.md"
+        notes: |
+          IMPORTANTE: Usar objetivo OUTCOME_LEADS, não CONVERSIONS.
+          destination_type = INSTANT_FORMS.
+          Bid Cap = valor_lead × 1.25 (não CPL histórico).
+
+    financial_config:
+      formula: |
+        valor_lead = ticket × taxa_conversao × margem
+        bid_cap = valor_lead × 1.25
+        budget_cbo = bid_cap × 10
+      notes: |
+        Taxa de conversão inicial: usar 5% se não houver histórico.
+        Revisar após primeiros 30 leads com dados reais.
+        CPL meta = bid_cap (o Meta tentará ficar abaixo)
+
+    form_decision:
+      mais_volume:
+        quando: "Ticket < R$200 | Produto de consumo | Primeiro teste"
+        trade_off: "Mais leads, CPL mais baixo, qualidade mais baixa"
+      alta_intencao:
+        quando: "Ticket > R$200 | Produto consultivo | Processo de vendas ativo"
+        trade_off: "Menos leads, CPL 2-3× maior, qualidade 2-4× maior"
+        recomendado: true
+
+    campaign_structure:
+      type: "Leads Manual (NÃO Advantage+)"
+      objective: "OUTCOME_LEADS"
+      optimization: "CBO"
+      bid_strategy: "LOWEST_COST_WITH_BID_CAP"
+      destination_type: "INSTANT_FORMS"
+      optimization_goal: "LEAD_GENERATION"
+      targeting: "Broad (gênero + faixa etária apenas)"
+      ads_per_adset: 1
+      naming_convention:
+        campanha: "{PAÍS} | Leads | CBO | BidCap | {PRODUTO}"
+        adset: "AS | Leads | {ÂNGULO} | Broad | v{N}"
+        ad: "AD | {PRODUTO} | {ÂNGULO} | v{N}"
+
+    checkpoint:
+      criteria:
+        - "valor_lead calculado e aprovado pelo usuário"
+        - "Bid Cap = valor_lead × 1.25 confirmado"
+        - "Budget CBO = bid_cap × 10 configurado"
+        - "Tipo de formulário definido (Mais Volume vs Alta Intenção)"
+        - "lead_form_id vinculado em todos os ad creatives"
+        - "Campanha em status PAUSED"
+        - "Formulário testado manualmente (preview no mobile)"
+      human_review: true
+      message: |
+        ⚠️ CHECKPOINT PHASE-2: Revisão humana necessária.
+
+        Configuração de Lead Gen:
+        • Campanha: [ID] | Objetivo: OUTCOME_LEADS | Budget: R$X/dia
+        • Bid Cap: R$X (baseado em valor_lead = R$X)
+        • Formulário: [ID] | Tipo: [Mais Volume / Alta Intenção]
+        • Ad Sets: [N] | Ads: [N] | Status: PAUSED
+
+        Confirme: Financeiro OK? Formulário OK? Criativos OK?
+        [ATIVAR] → seguir para lançamento
+        [REVISAR] → voltar para ajustes
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 3: LANÇAMENTO E MONITORAMENTO INICIAL (TrafficManager + LeadQualifier)
+# ═══════════════════════════════════════════════════════════════════════════════
+  - id: PHASE-3
+    name: "Lançamento e Monitoramento de Qualidade"
+    days: "0.5"
+    tier: 1
+    description: |
+      Campanha é ativada após aprovação humana. TrafficManager monitora
+      primeiras 48h de spend e leads chegando. LeadQualifier faz
+      primeira análise de qualidade após 20 leads coletados.
+
+    tasks:
+      - task_file: tasks/lead-gen-launch.md
+        agent: meta-ads-traffic:traffic-manager-engineer
+        required: true
+        description: "Ativar campanha + monitorar primeiras 48h"
+        output: "launch_confirmation.md + primeiros_leads.md"
+        notes: "Usar Passo 7 (Auditoria Final e Ativação) da task"
+
+      - task_file: tasks/qualify-leads.md
+        agent: meta-ads-traffic:lead-qualifier-analyzer
+        required: false
+        trigger: "Após 20 leads coletados (não antes)"
+        description: "Primeira análise de qualidade dos leads coletados"
+        output: "lqs_inicial.md — baseline de qualidade"
+
+    monitoring_48h:
+      check_points:
+        - time: "6h após ativação"
+          check: "Campanha está gastando? Leads chegando?"
+          action_if_no_spend: "Aguardar — é normal nas primeiras horas"
+        - time: "24h após ativação"
+          check: "CPL dentro do bid_cap? Formulário funcionando?"
+          action_if_no_leads: "Verificar formulário → aumentar bid 15% se OK"
+        - time: "48h após ativação"
+          check: "20 leads coletados? Qualidade inicial?"
+          action: "Chamar lead-qualifier-analyzer para análise"
+
+    early_signals:
+      positive:
+        - "CPL < bid_cap × 0.8"
+        - "Taxa de clique no form > 80% dos cliques no anúncio"
+        - "Tempo médio de preenchimento > 30s (indica intenção real)"
+      negative:
+        - "Zero leads em 48h com spend > bid_cap × 2"
+        - "CPL > bid_cap × 2"
+        - "Taxa de leads inválidos > 50% nas primeiras amostras"
+
+    checkpoint:
+      criteria:
+        - "Campanha ativada com status ACTIVE"
+        - "Primeiros leads chegando ao Leads Center"
+        - "Nenhum erro de formulário reportado"
+        - "CPL inicial dentro de 150% do bid_cap (é normal no início)"
+      human_review: false
+      message: |
+        ✅ PHASE-3 COMPLETE: Campanha de lead gen ativa.
+
+        📋 Status: ACTIVE
+        📊 Primeiros leads: [N] coletados
+        💰 CPL inicial: R$[X] (bid_cap: R$[Y])
+        📝 lead-qualifier-analyzer ativado após [N] leads
+
+        Próximo: daily-optimization workflow (após 48h).
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 4: CICLO DE OTIMIZAÇÃO DE LEAD GEN (recorrente)
+# ═══════════════════════════════════════════════════════════════════════════════
+  - id: PHASE-4
+    name: "Otimização Contínua de Lead Gen"
+    days: "recorrente (2-3× por semana)"
+    tier: 2
+    description: |
+      Ciclo recorrente de análise e otimização. Diferente de campanhas de
+      venda, a otimização de lead gen tem 2 dimensões: VOLUME (CPL) e
+      QUALIDADE (LQS). Decisões devem considerar ambas.
+
+      Regra de ouro: Nunca aumentar bid para resolver problema de qualidade.
+      Primeiro resolva a qualidade (formulário/criativo), depois escale.
+
+    tasks:
+      - task_file: tasks/qualify-leads.md
+        agent: meta-ads-traffic:lead-qualifier-analyzer
+        required: true
+        description: "Análise LQS semanal + recomendações de otimização"
+        output: "lqs_weekly.md + ações priorizadas"
+
+      - task_file: tasks/daily-audit.md
+        agent: meta-ads-traffic:data-analyst-analyzer
+        required: true
+        description: "Audit de performance de volume: CPL, impressões, CTR, frequência"
+        output: "volume_report.md — métricas de tráfego"
+
+      - task_file: tasks/scale-bid-cap.md
+        agent: meta-ads-traffic:traffic-manager-engineer
+        required: false
+        trigger: "Apenas se LQS > 60 E CPL_real < bid_cap"
+        description: "Escalar campanha apenas quando qualidade + volume estão OK"
+        output: "scale_log.md"
+
+    optimization_decision_matrix:
+      situation_1:
+        condition: "LQS < 50"
+        priority: "QUALIDADE primeiro"
+        actions:
+          - "Revisar formulário (perguntas, campos, tipo)"
+          - "Testar Alta Intenção se estava em Mais Volume"
+          - "Pausar ad sets com LQS < 30"
+          - "NÃO aumentar bid até LQS > 60"
+
+      situation_2:
+        condition: "LQS > 60 E CPL_real > bid_cap"
+        priority: "VOLUME (custo)"
+        actions:
+          - "Verificar targeting está broad"
+          - "Testar novo criativo com ângulo diferente"
+          - "Testar Mais Volume se estava em Alta Intenção"
+          - "Aumentar bid 15% apenas se não gastou por 72h"
+
+      situation_3:
+        condition: "LQS > 70 E CPL_real < bid_cap"
+        priority: "ESCALA"
+        actions:
+          - "+20% budget CBO"
+          - "Criar variações dos criativos vencedores"
+          - "Considerar expandir faixa etária gradualmente"
+
+      situation_4:
+        condition: "LQS > 80 E CPL_real < bid_cap × 0.6 por 14 dias"
+        priority: "OTIMIZAR BID"
+        actions:
+          - "Reduzir bid -10% para coletar margem"
+          - "Verificar volume não cair mais de 20%"
+
+    kpi_targets:
+      primary:
+        - "CPL_real ≤ valor_lead calculado"
+        - "LQS ≥ 60"
+        - "Taxa_invalidos ≤ 25%"
+      secondary:
+        - "Taxa_conversao_lead_venda próxima à estimativa inicial"
+        - "Custo por venda ≤ Break Even CPA equivalente"
+      stretch:
+        - "LQS ≥ 80"
+        - "CPL_real ≤ bid_cap × 0.7"
+        - "Taxa_conversao > taxa inicial estimada"
+
+    checkpoint:
+      criteria:
+        - "LQS calculado com dados de mínimo 20 leads"
+        - "CPL real vs bid_cap documentados"
+        - "Ações priorizadas por impacto"
+        - "Decision matrix aplicada"
+      human_review: false
+      message: |
+        ✅ PHASE-4 COMPLETE: Análise de lead gen concluída.
+
+        📊 LQS atual: [score]/100
+        💰 CPL Real: R$[X] | Bid Cap: R$[Y]
+        ✅ Leads válidos: [N] ([%])
+        🎯 Ação prioritária: [QUALIDADE/VOLUME/ESCALA]
+
+        Próxima análise: [data].
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMPLETION SIGNALS
+# ═══════════════════════════════════════════════════════════════════════════════
+completion_signal: "<promise>COMPLETE</promise>"
+checkpoint_signal: "<promise>CHECKPOINT:PHASE-{N}</promise>"
+blocked_signal: "<promise>BLOCKED:LEAD-GEN</promise>"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OUTPUT ARTIFACTS
+# ═══════════════════════════════════════════════════════════════════════════════
+outputs:
+  phase_1:
+    - "creative_brief_leadgen.md — ângulos e copies para lead"
+  phase_2:
+    - "campaign_ids.json — IDs de campanha, ad sets e ads"
+    - "lead_gen_config.md — bid cap, valor_lead, form config"
+  phase_3:
+    - "launch_confirmation.md — confirmação de ativação"
+    - "lqs_inicial.md — baseline de qualidade (após 20 leads)"
+  phase_4:
+    - "lqs_weekly.md — score de qualidade semanal"
+    - "volume_report.md — métricas de tráfego"
+    - "scale_log.md — ações de escala executadas"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ERROR HANDLING
+# ═══════════════════════════════════════════════════════════════════════════════
+error_handling:
+  on_phase_failure:
+    - log_error: true
+    - halt_workflow: true
+    - notify_stakeholders: true
+
+  specific_errors:
+    form_not_created:
+      phase: PHASE-2
+      condition: "lead_form_id não fornecido"
+      action: "Bloquear — instruir usuário a criar formulário no Meta Business Suite"
+      message: |
+        Para criar o formulário:
+        Meta Business Suite → Formulários de anúncios → Criar formulário
+        Escolha o tipo (Mais Volume ou Alta Intenção) e configure os campos.
+
+    zero_leads_72h:
+      phase: PHASE-3
+      condition: "spend > bid_cap × 2 AND leads = 0"
+      action: |
+        1. Verificar se formulário está acessível (abrir preview)
+        2. Verificar lead_form_id no ad creative
+        3. Se OK: aumentar bid 15%
+        4. Se ainda sem leads após 24h: pausar e revisar estrutura
+      message: "Possível problema no formulário ou bid muito baixo"
+
+    lqs_critico:
+      phase: PHASE-4
+      condition: "LQS < 30 após 50+ leads"
+      action: "Pausar campanha para revisão — formulário com problema estrutural"
+      message: "LQS crítico indica formulário atraindo audiência errada ou dados inválidos"
+
+    cpl_muito_alto:
+      phase: PHASE-4
+      condition: "CPL_real > bid_cap × 2 por 7+ dias"
+      action: "Revisar formulário antes de qualquer ajuste de bid"
+      message: "CPL elevado com bid cap ativo = formulário com alta fricção ou criativo errado"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMPARISON: LEAD GEN vs SALES
+# ═══════════════════════════════════════════════════════════════════════════════
+comparison_table:
+  dimension: Sales Campaign
+  lead_gen_vs_sales:
+    objetivo_api: "OUTCOME_LEADS vs OUTCOME_SALES"
+    tracking: "Nativo (sem pixel) vs Pixel + CAPI obrigatório"
+    bid_base: "valor_lead = ticket × conversão × margem vs Break Even CPA"
+    otimizacao: "LEAD_GENERATION vs CONVERSIONS"
+    destination: "INSTANT_FORMS vs WEBSITE"
+    metrica_qualidade: "LQS (Lead Quality Score) vs ROAS"
+    pre_requisito: "Formulário criado vs Pixel com 20+ conversões"
+    ciclo_vendas: "Longo (consulta) vs Curto (checkout direto)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AGENT ASSIGNMENTS BY PHASE
+# ═══════════════════════════════════════════════════════════════════════════════
+agents_by_phase:
+  PHASE-1:
+    primary:
+      - "meta-ads-traffic:creative-strategist-designer"
+    secondary: []
+  PHASE-2:
+    primary:
+      - "meta-ads-traffic:traffic-manager-engineer"
+    secondary:
+      - "meta-ads-traffic:creative-strategist-designer (brief reference)"
+  PHASE-3:
+    primary:
+      - "meta-ads-traffic:traffic-manager-engineer"
+    secondary:
+      - "meta-ads-traffic:lead-qualifier-analyzer (após 20 leads)"
+  PHASE-4:
+    primary:
+      - "meta-ads-traffic:lead-qualifier-analyzer"
+      - "meta-ads-traffic:data-analyst-analyzer"
+    secondary:
+      - "meta-ads-traffic:traffic-manager-engineer (execução)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# QUALITY CHECKLIST
+# ═══════════════════════════════════════════════════════════════════════════════
+quality_checklist:
+  "Criativo para Lead Gen":
+    - "[ ] Criativos focados em QUALIFICAR, não só em atrair cliques"
+    - "[ ] Copy alinhado com o que o formulário pede"
+    - "[ ] CTA congruente (Inscreva-se / Saiba Mais)"
+    - "[ ] Formato mobile-first (onde 90% dos leads são captados)"
+  "Configuração da Campanha":
+    - "[ ] Objetivo: OUTCOME_LEADS (não CONVERSIONS)"
+    - "[ ] destination_type: INSTANT_FORMS"
+    - "[ ] Bid Cap baseado em valor_lead (não CPL histórico)"
+    - "[ ] Budget CBO = bid_cap × 10"
+    - "[ ] lead_form_id correto em todos os ads"
+    - "[ ] Formulário testado manualmente no mobile"
+  "Qualificação de Leads":
+    - "[ ] LQS calculado após 20+ leads"
+    - "[ ] CPL real vs CPL atribuído documentados"
+    - "[ ] Integração CRM configurada (ou processo manual de qualificação)"
+    - "[ ] Decision matrix aplicada (qualidade vs volume)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# METADATA
+# ═══════════════════════════════════════════════════════════════════════════════
+metadata:
+  version: "1.0.0"
+  framework: "AIOS Squad Workflow Standard + Bid Cap Framework"
+  created: "2026-02-25"
+  primary_use_case: "Campanhas de geração de leads via Instant Form com Bid Cap"
+  key_difference: |
+    Versão 1.0 do workflow de lead gen adapta o framework Bid Cap para o
+    contexto de captação de leads. A principal inovação é a métrica LQS
+    (Lead Quality Score) como bússola de qualidade — o CPL isolado não
+    é suficiente para avaliar saúde de uma campanha de lead gen.
+    O bid cap é calculado pelo valor real do lead para o negócio,
+    não por benchmarks do mercado.

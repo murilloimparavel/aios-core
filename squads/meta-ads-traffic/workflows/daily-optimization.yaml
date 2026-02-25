@@ -1,0 +1,355 @@
+# WF-02: Otimização Diária de Campanhas Meta Ads
+# Duration: 1-2h
+# Best for: Rotina diária de análise e otimização de campanhas ativas
+# Key Agents: DataAnalyst → TrafficManager → CreativeStrategist
+
+workflow:
+  id: wf-daily-optimization
+  name: "Otimização Diária de Campanhas Meta Ads"
+  version: "2.0.0"
+  duration: "1-2h"
+  description: |
+    Workflow de otimização contínua para campanhas ativas. Executado
+    idealmente todo dia útil, mas decisões só são tomadas quando
+    a janela temporal mínima de 3 dias foi atingida.
+
+    Princípio central: NUNCA tomar decisões com dados de menos de 48h.
+    Performance diária é ruído; tendência de 3-7 dias é sinal.
+
+    Este workflow produz:
+    - Ads Health Score atualizado por campanha
+    - Kill list executada (ad sets pausados)
+    - Scale list executada (budgets aumentados)
+    - Creative fatigue report enviado ao CreativeStrategist
+
+  best_for:
+    - "Rotina diária de gestão de conta"
+    - "Após 48h de qualquer nova campanha ou escala"
+    - "Quando usuário reporta queda de ROAS ou aumento de CPA"
+    - "Revisão semanal de performance geral da conta"
+
+  cadence:
+    recommended: "Todo dia útil"
+    minimum: "A cada 48h para campanhas com spend > R$500/dia"
+    decision_window: "Mínimo 3 dias de dados antes de kill ou scale"
+    after_scale: "48h de monitoramento intensivo após qualquer aumento de budget"
+
+  agents:
+    primary: "meta-ads-traffic:data-analyst-analyzer"
+    secondary:
+      - "meta-ads-traffic:traffic-manager-engineer (execução)"
+      - "meta-ads-traffic:creative-strategist-designer (fatigue response)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 1: COLETA E ANÁLISE DE DADOS (DataAnalyst)
+# ═══════════════════════════════════════════════════════════════════════════════
+phases:
+  - id: PHASE-1
+    name: "Coleta e Análise de Performance"
+    days: "0.25"
+    tier: 0
+    description: |
+      DataAnalyst coleta dados dos 3 níveis (campanha, ad set, ad),
+      calcula o Ads Health Score e identifica padrões de kill e scale.
+      Análise baseada em janela de 3-7 dias, nunca em dia isolado.
+
+    tasks:
+      - task_file: tasks/daily-audit.md
+        agent: meta-ads-traffic:data-analyst-analyzer
+        required: true
+        description: "Coletar insights, calcular Health Score, gerar Kill/Scale lists"
+        output: "audit_report.md — Health Score + Kill List + Scale List + Fatigue Report"
+
+    analysis_windows:
+      primary: "last_3d"
+      secondary: "last_7d (para tendência)"
+      trend_comparison: "últimos 3d vs 3d anteriores"
+
+    health_score_thresholds:
+      healthy: ">= 90 — foco em volume criativo"
+      warning: "70-89 — revisar recomendações"
+      critical: "50-69 — problemas estruturais"
+      urgent: "< 50 — parar escala, auditoria completa"
+
+    kill_rules:
+      - id: KR-1
+        name: "Spend sem conversão"
+        condition: "spend > bid_cap × 2 AND conversoes = 0"
+        window: "48h"
+        priority: CRITICAL
+
+      - id: KR-2
+        name: "CTR baixo com volume"
+        condition: "impressoes > 2000 AND ctr < 0.5%"
+        window: "3d"
+        priority: HIGH
+
+      - id: KR-3
+        name: "Frequência crítica"
+        condition: "frequencia > 3.5"
+        window: "7d"
+        priority: MEDIUM
+
+      - id: KR-4
+        name: "CPM desproporcional"
+        condition: "cpm > media_conta × 3"
+        window: "7d"
+        priority: MEDIUM
+
+    scale_rules:
+      - id: SR-1
+        name: "ROAS consistente"
+        condition: "roas > roas_meta × 1.5 FOR 3d"
+        action: "+20% budget CBO"
+        priority: HIGH
+
+      - id: SR-2
+        name: "CPA excelente"
+        condition: "cpa < bid_cap × 0.7 FOR 7d"
+        action: "+20% budget OU -10% bid"
+        priority: MEDIUM
+
+      - id: SR-3
+        name: "Volume disponível"
+        condition: "frequencia < 1.5 AND roas > roas_meta"
+        action: "Novo criativo no ad set"
+        priority: LOW
+
+    checkpoint:
+      criteria:
+        - "Dados coletados nos 3 níveis (campanha, ad set, ad)"
+        - "Janela mínima de 3 dias de dados disponíveis"
+        - "Health Score calculado para todas as campanhas ativas"
+        - "Kill List gerada com justificativa de dados"
+        - "Scale List gerada com percentual calculado"
+      human_review: false
+      message: |
+        ✅ PHASE-1 COMPLETE: Análise concluída.
+
+        📊 Ads Health Score:
+        • [Campanha 1]: [Score]/100
+        • [Campanha 2]: [Score]/100
+
+        🔴 Kill List: [N] itens
+        🟢 Scale List: [N] itens
+        🟡 Fatigue Report: [N] criativos
+
+        Próximo: TrafficManager executa ações.
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 2: EXECUÇÃO DAS OTIMIZAÇÕES (TrafficManager)
+# ═══════════════════════════════════════════════════════════════════════════════
+  - id: PHASE-2
+    name: "Execução das Otimizações"
+    days: "0.25"
+    tier: 1
+    description: |
+      TrafficManager executa as ações recomendadas pelo DataAnalyst:
+      pausa underperformers (Kill List) e escala vencedores (Scale List).
+      Todas as ações são registradas com timestamp e justificativa.
+
+    tasks:
+      - task_file: tasks/scale-bid-cap.md
+        agent: meta-ads-traffic:traffic-manager-engineer
+        required: true
+        description: "Executar Kill List (pauses) e Scale List (budget increases)"
+        output: "optimization_log.md — log de todas as ações com before/after"
+
+    optimization_order:
+      1: "KILL — pausar underperformers primeiro (para o sangramento)"
+      2: "SCALE — aumentar budget nos vencedores"
+      3: "ADJUST — ajuste de bid se necessário (último recurso)"
+
+    bid_adjustment_rules:
+      when_to_adjust: |
+        NUNCA ajustar bid como primeira ação.
+        Ajustar bid apenas quando:
+        1. Campanha não gasta após 72h E já adicionou 5+ novos criativos
+        2. CPA real é consistentemente 50%+ abaixo do bid por 14+ dias
+      increase_bid:
+        condition: "Campanha não gasta em 72h após novos criativos"
+        amount: "+15%"
+        max_attempts: 2
+      decrease_bid:
+        condition: "CPA < 50% do bid por 14 dias"
+        amount: "-10%"
+        rationale: "Coletar margem sem perder volume"
+
+    scale_limits:
+      max_per_week: "+30% acumulado"
+      min_interval: "72h entre escalas"
+      approval_threshold: "> 25% requer confirmação humana"
+
+    checkpoint:
+      criteria:
+        - "Kill List executada — todos os underperformers pausados"
+        - "Scale List executada — todos os vencedores com budget aumentado"
+        - "Aprovação humana obtida para scales > 25%"
+        - "Optimization log registrado com todas as ações"
+      human_review: false
+      message: |
+        ✅ PHASE-2 COMPLETE: Otimizações aplicadas.
+
+        🔴 Pausados: [N] ad sets
+        🟢 Escalados: [N] campanhas (Budget médio +[X]%)
+        📝 Log registrado em optimization_log.md
+
+        Próximo: CreativeStrategist avalia fatigue report.
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 3: RESPOSTA CRIATIVA (CreativeStrategist)
+# ═══════════════════════════════════════════════════════════════════════════════
+  - id: PHASE-3
+    name: "Resposta Criativa ao Fatigue"
+    days: "0.25"
+    tier: 2
+    description: |
+      CreativeStrategist analisa o Fatigue Report e define ações para
+      manter o pipeline de criativos funcionando. Sem novos criativos,
+      o Bid Cap para de gastar quando os ativos atuais forem saturados.
+
+    tasks:
+      - task_file: tasks/creative-cycle.md
+        agent: meta-ads-traffic:creative-strategist-designer
+        required: true
+        description: "Analisar fatigue, priorizar novos criativos, gerar briefs"
+        output: "creative_priorities.md — lista priorizada de criativos para produção"
+        notes: |
+          Executar apenas se Fatigue Report tem 1+ itens.
+          Se Fatigue Report vazio, esta fase é opcional (check-in de pipeline).
+
+    fatigue_response:
+      threshold: "CTR caiu > 30% em 3 dias vs baseline"
+      priority_logic: |
+        1. Ângulos vencedores com fatigue → novas variações do MESMO ângulo
+        2. Ângulos médios com fatigue → testar novo ângulo
+        3. Ângulos ruins sem conversão → descontinuar ângulo
+
+    creative_pipeline_health:
+      minimum_ready: 5
+      ideal_ready: 10
+      warning_trigger: "< 3 criativos prontos para upload"
+      critical_trigger: "< 1 criativo pronto para upload"
+
+    checkpoint:
+      criteria:
+        - "Fatigue report analisado (mesmo se vazio)"
+        - "Ângulos fatigue identificados e priorizados"
+        - "Briefs de produção gerados para semana seguinte"
+        - "Pipeline criativo com status atual documentado"
+      human_review: false
+      message: |
+        ✅ PHASE-3 COMPLETE: Ciclo criativo atualizado.
+
+        🎨 Criativos com fatigue: [N]
+        📋 Novos briefs gerados: [N]
+        🔄 Pipeline status: [N] prontos para upload
+
+        Workflow concluído. Próxima execução: amanhã.
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMPLETION SIGNALS
+# ═══════════════════════════════════════════════════════════════════════════════
+completion_signal: "<promise>COMPLETE</promise>"
+checkpoint_signal: "<promise>CHECKPOINT:PHASE-{N}</promise>"
+blocked_signal: "<promise>BLOCKED:DAILY-OPT</promise>"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OUTPUT ARTIFACTS
+# ═══════════════════════════════════════════════════════════════════════════════
+outputs:
+  phase_1:
+    - "audit_report.md — Health Score + Kill List + Scale List + Fatigue"
+  phase_2:
+    - "optimization_log.md — ações executadas com before/after"
+    - "scale_alerts.md — campanhas escaladas para monitoramento 48h"
+  phase_3:
+    - "creative_priorities.md — briefs priorizados para produção"
+    - "pipeline_status.md — estado atual do banco de criativos"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ERROR HANDLING
+# ═══════════════════════════════════════════════════════════════════════════════
+error_handling:
+  on_phase_failure:
+    - log_error: true
+    - halt_workflow: false  # Continuar com fases independentes
+    - notify_stakeholders: true
+
+  on_checkpoint_failure:
+    - log_failure_reason: true
+    - return_to_previous_phase: true
+    - max_retries: 1
+
+  specific_errors:
+    no_data_available:
+      phase: PHASE-1
+      condition: "Campanha ativa há menos de 48h"
+      action: "SKIP kill/scale decisions — apenas coletar dados"
+      message: "Aguardar 48h antes de tomar decisões de otimização"
+
+    all_campaigns_in_kill_list:
+      phase: PHASE-2
+      condition: "Kill List tem > 50% das campanhas ativas"
+      action: "Revisar com usuário antes de pausar em massa"
+      message: "Possível problema de tracking — verificar pixel antes de pausar"
+
+    creative_pipeline_critical:
+      phase: PHASE-3
+      condition: "< 1 criativo pronto para upload"
+      action: "Alertar usuário + escalar para modo emergência criativo"
+      message: "Pipeline crítico: sem criativos novos, campanha para de gastar"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AGENT ASSIGNMENTS BY PHASE
+# ═══════════════════════════════════════════════════════════════════════════════
+agents_by_phase:
+  PHASE-1:
+    primary:
+      - "meta-ads-traffic:data-analyst-analyzer"
+    secondary: []
+  PHASE-2:
+    primary:
+      - "meta-ads-traffic:traffic-manager-engineer"
+    secondary:
+      - "meta-ads-traffic:data-analyst-analyzer (referência dos dados)"
+  PHASE-3:
+    primary:
+      - "meta-ads-traffic:creative-strategist-designer"
+    secondary:
+      - "meta-ads-traffic:data-analyst-analyzer (fatigue report)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# QUALITY CHECKLIST
+# ═══════════════════════════════════════════════════════════════════════════════
+quality_checklist:
+  "Coleta e Análise":
+    - "[ ] Dados coletados nos 3 níveis (campanha, ad set, ad)"
+    - "[ ] Health Score calculado com breakdown por categoria"
+    - "[ ] Kill List tem justificativa de dados para cada item"
+    - "[ ] Scale List tem percentual calculado por nível de ROAS"
+    - "[ ] Análise baseada em janela mínima de 3 dias"
+  "Execução de Otimizações":
+    - "[ ] Kill executada antes do scale"
+    - "[ ] Limits de scale respeitados (max 30%/semana)"
+    - "[ ] Aprovação humana para scales > 25%"
+    - "[ ] Optimization log registrado com timestamps"
+  "Resposta Criativa":
+    - "[ ] Fatigue Report analisado"
+    - "[ ] Prioridade criativa alinhada com ângulos vencedores"
+    - "[ ] Pipeline status atualizado"
+    - "[ ] Novos briefs gerados para semana seguinte"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# METADATA
+# ═══════════════════════════════════════════════════════════════════════════════
+metadata:
+  version: "2.0.0"
+  framework: "AIOS Squad Workflow Standard + Bid Cap Framework"
+  created: "2026-02-25"
+  primary_use_case: "Rotina diária de otimização de campanhas Meta Ads com Bid Cap"
+  key_difference: |
+    Versão 2.0 incorpora Kill/Scale Rules explícitas com thresholds numéricos,
+    Ads Health Score como métrica central de saúde, e resposta criativa
+    integrada ao loop de otimização. A decisão de bid adjustment é
+    explicitamente o ÚLTIMO recurso — criativos novos vêm primeiro.

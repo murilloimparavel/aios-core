@@ -1,0 +1,18 @@
+{
+  "project": "Nome do Projeto",
+  "status": "initial",
+  "roadmap": [
+    {
+      "id": "EP-001",
+      "title": "Epic Title",
+      "stories": [
+        {
+          "id": "ST-001",
+          "title": "Story Title",
+          "status": "pending",
+          "tasks": []
+        }
+      ]
+    }
+  ]
+}

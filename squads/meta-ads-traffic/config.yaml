@@ -1,0 +1,113 @@
+name: meta-ads-traffic
+version: 2.1.0
+short-title: Meta Ads Bid Cap Squad
+description: >-
+  Squad especializado em gestão de tráfego pago no Meta Ads (Facebook/Instagram).
+  Estratégia central: Bid Cap para escala lucrativa com controle de CPA.
+  Suporta campanhas de vendas (OUTCOME_SALES) e lead gen (OUTCOME_LEADS via Instant Form).
+  Automatiza criação, otimização e análise de campanhas via Marketing API v20+.
+author: Synkra AIOS
+slashPrefix: metaAds
+
+settings:
+  activation:
+    show_ecosystem_report: false
+    show_greeting: true
+    show_quick_commands: true
+
+  # Philosophy
+  primary_strategy: "Bid Cap (LOWEST_COST_WITH_BID_CAP)"
+  fallback_strategy: "Highest Volume (apenas para testes iniciais)"
+  decision_window: "3-7 dias (nunca dia isolado)"
+  creative_volume_target: "10-30 novos criativos/dia (ideal)"
+
+  # Dependencies
+  dependencies:
+    - facebook-nodejs-business-sdk
+    - node-fetch
+
+  # Meta API
+  meta_api:
+    version: "v20.0"
+    base_url: "https://graph.facebook.com/v20.0"
+    required_permissions:
+      - ads_management
+      - ads_read
+      - business_management
+
+  # Agents
+  agents:
+    - id: traffic-manager-engineer
+      file: agents/traffic-manager-engineer.md
+      role: "Media Buyer & Bid Cap Executor (vendas + lead gen)"
+    - id: data-analyst-analyzer
+      file: agents/data-analyst-analyzer.md
+      role: "Performance Analytics & Health Score"
+    - id: creative-strategist-designer
+      file: agents/creative-strategist-designer.md
+      role: "Creative Volume & Angle Strategy"
+    - id: lead-qualifier-analyzer
+      file: agents/lead-qualifier-analyzer.md
+      role: "Lead Quality Score & Form Optimization"
+
+  # Tasks (HO-TP-001)
+  tasks:
+    # Sales Campaign Tasks
+    - id: bid-cap-launch
+      file: tasks/bid-cap-launch.md
+      executor: traffic-manager-engineer
+      type: sales
+    - id: daily-audit
+      file: tasks/daily-audit.md
+      executor: data-analyst-analyzer
+      type: analysis
+    - id: creative-cycle
+      file: tasks/creative-cycle.md
+      executor: creative-strategist-designer
+      type: creative
+    - id: scale-bid-cap
+      file: tasks/scale-bid-cap.md
+      executor: traffic-manager-engineer
+      type: sales
+    # Lead Gen Tasks
+    - id: lead-gen-launch
+      file: tasks/lead-gen-launch.md
+      executor: traffic-manager-engineer
+      type: lead_gen
+    - id: qualify-leads
+      file: tasks/qualify-leads.md
+      executor: lead-qualifier-analyzer
+      type: lead_gen
+
+  # Workflows
+  workflows:
+    - id: campaign-launch
+      file: workflows/campaign-launch.yaml
+      duration: "2-4h"
+      phases: 4
+      type: sales
+    - id: daily-optimization
+      file: workflows/daily-optimization.yaml
+      duration: "1-2h"
+      phases: 3
+      type: sales
+    - id: lead-gen-campaign
+      file: workflows/lead-gen-campaign.yaml
+      duration: "2-3h lançamento + análise contínua"
+      phases: 4
+      type: lead_gen
+
+  # Checklists
+  checklists:
+    - id: pre-launch
+      file: checklists/pre-launch-checklist.md
+      used_in: campaign-launch (PHASE-4)
+
+  # Source Documents
+  sources:
+    - id: meta-api-architecture
+      file: sources/meta-api-architecture.md
+      type: architecture
+    - id: framework-bid-cap
+      file: sources/framework-bid-cap.md
+      type: strategy_framework

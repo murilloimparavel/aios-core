@@ -1,0 +1,37 @@
+{
+  "name": "@murilloimparavel/aios-squads",
+  "version": "1.0.0",
+  "description": "Custom squads for Synkra AIOS",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "files": [
+    "ralph/",
+    "mmos-squad/",
+    "meta-ads-traffic/",
+    "etl-squad/",
+    "squad-creator-pro/",
+    "README.md"
+  ],
+  "keywords": [
+    "aios",
+    "squads",
+    "agents"
+  ],
+  "author": "Murillo Imparavel",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/murilloimparavel/aios-template.git",
+    "directory": "squads"
+  },
+  "bugs": {
+    "url": "https://github.com/murilloimparavel/aios-template/issues"
+  },
+  "homepage": "https://github.com/murilloimparavel/aios-template#readme",
+  "dependencies": {
+    "axios": "^1.13.5",
+    "dotenv": "^17.3.1"
+  }
+}
