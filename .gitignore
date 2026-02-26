@@ -10,7 +10,11 @@
 # Dependencies (AIOS)
 node_modules/
 node_modules
-
+squads/node_modules
+.ides/*
+.ides
+.claude-aios/*
+.claude-aios
 # Build & Logs (AIOS)
 dist/
 build/
